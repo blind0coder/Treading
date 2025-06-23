@@ -12,4 +12,4 @@ RUN apt-get update && apt-get install -y dos2unix \
 # Execute Maven build
 RUN ./mvnw clean package -DskipTests
 
-...
+
