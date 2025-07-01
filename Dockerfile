@@ -1,15 +1,21 @@
-FROM eclipse-temurin:17-jdk AS build
+
+# Stage 1 — build the JAR using Maven wrapper
+FROM maven:3-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# Copy project files
-COPY .mvn/ mvnw pom.xml src/ ./
+# Copy only the files needed for build
+COPY .mvn/ mvnw pom.xml ./
+RUN chmod +x mvnw
 
-# Convert to Unix line endings & make wrapper executable
-RUN apt-get update && apt-get install -y dos2unix \
-    && dos2unix mvnw \
-    && chmod +x mvnw
-
-# Execute Maven build
+COPY src/ src/
 RUN ./mvnw clean package -DskipTests
 
+# Stage 2 — build the runtime image
+FROM eclipse-temurin:17-jdk-jammy
+WORKDIR /app
 
+# Copy the built JAR from the first stage
+COPY --from=build /app/target/*.jar app.jar
+
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
